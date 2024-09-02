@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Application Autofill</title>
+    <style>
+        body { width: 300px; padding: 10px; }
+        input, select { width: 100%; margin-bottom: 10px; }
+        button { width: 100%; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div id="authContainer">
+        <h2>Welcome</h2>
+        <button id="signupButton">Sign Up</button>
+        <button id="loginButton">Login</button>
+    </div>
+    <div id="signupForm" style="display:none;">
+        <h2>Sign Up</h2>
+        <input type="email" id="signupEmail" placeholder="Email">
+        <input type="password" id="signupPassword" placeholder="Password">
+        <input type="password" id="confirmPassword" placeholder="Confirm Password">
+        <button id="submitSignup">Sign Up</button>
+    </div>
+    <div id="loginForm" style="display:none;">
+        <h2>Login</h2>
+        <input type="email" id="loginEmail" placeholder="Email">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <button id="submitLogin">Login</button>
+    </div>
+    <div id="mainContainer" style="display:none;">
+        <h2>Your Information</h2>
+        <button id="fillFormButton">Fill Form</button>
+        <button id="editInfoButton">Edit Info</button>
+        <input type="file" id="resumeUpload" accept=".pdf,.doc,.docx">
+        <button id="uploadResumeButton">Upload Resume</button>
+        <button id="logoutButton">Logout</button>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

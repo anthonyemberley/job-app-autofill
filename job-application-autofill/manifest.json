@@ -1,0 +1,41 @@
+{
+    "manifest_version": 3,
+    "name": "Job Application Autofill",
+    "version": "1.0",
+    "description": "Automatically fill job applications with your information",
+    "permissions": [
+        "storage",
+        "activeTab"
+    ],
+    "background": {
+        "service_worker": "src/background.js"
+    },
+    "action": {
+        "default_popup": "src/popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "src/content.js"
+            ]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "src/signup.html",
+                "src/login.html",
+                "src/signup.js",
+                "src/login.js",
+                "src/edit-info.html",
+                "src/edit-info.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}
