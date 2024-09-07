@@ -8,13 +8,24 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadUserData() {
     chrome.storage.local.get('accessToken', function(result) {
         if (result.accessToken) {
+            console.log('Access token found:', result.accessToken);
             fetch('http://127.0.0.1:5000/get_user_data', {
                 method: 'GET',
                 headers: {
-                    'Authorization': 'Bearer ' + result.accessToken
+                    'Authorization': 'Bearer ' + result.accessToken,
+                    'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        console.log('No user data found on server. Using default empty data.');
+                        return {};
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(userData => {
                 console.log('Loaded user data from server:', JSON.stringify(userData, null, 2));
                 populateFormFields(userData);
@@ -30,6 +41,26 @@ function loadUserData() {
         }
     });
 }
+
+function populateFormFields(userData) {
+    // Ensure userData has all necessary properties, even if empty
+    userData = {
+        personalInfo: userData.personalInfo || {},
+        workExperience: userData.workExperience || [],
+        education: userData.education || [],
+        skills: userData.skills || [],
+        authorizedToWork: userData.authorizedToWork || false,
+        requireSponsorship: userData.requireSponsorship || false,
+        isPEP: userData.isPEP || false,
+        relatedToPEP: userData.relatedToPEP || false,
+        relatedToPayPalEmployee: userData.relatedToPayPalEmployee || false,
+        howHeardAboutUs: userData.howHeardAboutUs || '',
+        autoConsent: userData.autoConsent || false
+    };
+
+    // Populate form fields with userData
+}
+
 
 function loadLocalUserData() {
     chrome.storage.local.get('userData', function(result) {

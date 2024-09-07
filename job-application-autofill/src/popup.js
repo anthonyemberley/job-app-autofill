@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editInfoButton').addEventListener('click', editInfo);
     document.getElementById('uploadResumeButton').addEventListener('click', uploadResume);
     document.getElementById('logoutButton').addEventListener('click', logout);
+    document.getElementById('backToLoginButton').addEventListener('click', showLoginForm);
+    document.getElementById('backToSignupButton').addEventListener('click', showSignupForm);
+    
 
     checkLoginStatus();
 });
@@ -167,10 +170,72 @@ function logout() {
 
 function fillForm() {
     console.log('Fill form function called');
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {action: "fillForm"}, function(response) {
-            console.log('Form fill request sent');
-        });
+    chrome.storage.local.get('accessToken', function(result) {
+        console.log('Access token:', result.accessToken);
+        if (result.accessToken) {
+            fetch('http://127.0.0.1:5000/get_user_data', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + result.accessToken
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(userData => {
+                console.log('User data received:', userData);
+                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    if (chrome.runtime.lastError) {
+                        console.error('Error querying tabs:', chrome.runtime.lastError);
+                        return;
+                    }
+                    
+                    if (tabs.length === 0) {
+                        console.error('No active tab found');
+                        return;
+                    }
+            
+                    const activeTab = tabs[0];
+                    
+                    // Inject the content script if it hasn't been injected yet
+                    chrome.scripting.executeScript(
+                        {
+                            target: { tabId: activeTab.id },
+                            files: ['src/content.js']
+                        },
+                        () => {
+                            if (chrome.runtime.lastError) {
+                                console.error('Error injecting content script:', chrome.runtime.lastError);
+                                return;
+                            }
+            
+                            // Now send the message with the userData
+                            chrome.tabs.sendMessage(activeTab.id, {
+                                action: "fillForm",
+                                userData: userData
+                            }, function(response) {
+                                if (chrome.runtime.lastError) {
+                                    console.error('Error sending message:', chrome.runtime.lastError);
+                                } else {
+                                    console.log('Form fill request sent');
+                                }
+                            });
+                        }
+                    );
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching user data:', error);
+                alert('Failed to fetch user data. Please try again.');
+            });
+        } else {
+            console.error('Access token not found');
+            alert('Please log in to fill the form');
+        }
     });
 }
 
@@ -181,6 +246,7 @@ function editInfo() {
 
 function uploadResume() {
     console.log('Upload resume function called');
+    alert('Resume upload functionality is not yet implemented');
     // Implement resume upload logic here
 }
 
@@ -188,4 +254,16 @@ function editInfo() {
     const editInfoUrl = chrome.runtime.getURL('src/edit-info.html');
     console.log('Edit Info URL:', editInfoUrl);
     chrome.tabs.create({url: editInfoUrl});
+}
+
+function showSignupForm() {
+    document.getElementById('authContainer').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('signupForm').style.display = 'block';
+}
+
+function showLoginForm() {
+    document.getElementById('authContainer').style.display = 'none';
+    document.getElementById('signupForm').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
 }
