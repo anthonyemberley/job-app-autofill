@@ -55,7 +55,7 @@ function populateFormFields(userData) {
         relatedToPEP: userData.relatedToPEP || false,
         relatedToPayPalEmployee: userData.relatedToPayPalEmployee || false,
         howHeardAboutUs: userData.howHeardAboutUs || '',
-        autoConsent: userData.autoConsent || false
+        autoConsent: userData.autoConsent || false,
     };
 
     // Populate form fields with userData
@@ -188,12 +188,15 @@ function saveUserData(event) {
     const personalInfoFields = [
         'firstName', 'lastName', 'preferredName', 'email', 'phoneType', 'countryPhoneCode',
         'phone', 'address1', 'address2', 'city', 'state', 'postalCode', 'country',
-        'gender', 'raceEthnicity', 'veteranStatus', 'disabilityStatus', 'authorizedToWork',
-        'requireSponsorship', 'isPEP', 'relatedToPEP', 'relatedToPayPalEmployee'
+        'gender', 'raceEthnicity', 'veteranStatus', 'disabilityStatus',
+         'isPEP', 'relatedToPEP', 'relatedToPayPalEmployee'
     ];
+
+
 
     // Populate personalInfo object
     personalInfoFields.forEach(field => {
+        console.log("field:", field);
         const element = document.getElementById(field);
         if (element) {
             if (element.type === 'checkbox') {
@@ -204,6 +207,12 @@ function saveUserData(event) {
         }
     });
 
+    userData.authorizedToWork = document.getElementById('authorizedToWork').checked;
+
+
+    
+    userData.requireSponsorship = document.getElementById('requireSponsorship').checked;
+    console.log("requireSponsorship:", document.getElementById('requireSponsorship').checked);
     // Handle skills
     const skillsElement = document.getElementById('skills');
     if (skillsElement) {
