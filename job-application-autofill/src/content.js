@@ -12,23 +12,39 @@ function fillForm(userData) {
         fillField('preferred', userData.personalInfo.preferredName);
     }
 
-    // Fill first name
-    fillField('firstName', userData.first_name);
-
-    // Fill last name
-    fillField('lastName', userData.last_name);
-
-     // Fill full name or first name and last name
-     if (userData.personalInfo && userData.personalInfo.firstName && userData.personalInfo.lastName) {
-        const fullName = `${userData.personalInfo.firstName} ${userData.personalInfo.lastName}`;
-        fillField('fullName', fullName);
-        fillField('name', fullName);  // Added this line for generic name fields
-        fillField('firstName', userData.personalInfo.firstName);
-        fillField('lastName', userData.personalInfo.lastName);
-    }
+      // Fill first name
+      fillField('firstName', userData.first_name);
+      fillField('first name', userData.first_name);
+      fillField('first_name', userData.first_name);
+  
+      // Fill last name
+      fillField('lastName', userData.last_name);
+      fillField('last name', userData.last_name);
+      fillField('last_name', userData.last_name);
+  
+      // Fill full name or first name and last name
+      if (userData.personalInfo && userData.personalInfo.firstName && userData.personalInfo.lastName) {
+          const fullName = `${userData.personalInfo.firstName} ${userData.personalInfo.lastName}`;
+          fillField('fullName', fullName);
+          fillField('full name', fullName);
+          fillField('firstName', userData.personalInfo.firstName);
+          fillField('first name', userData.personalInfo.firstName);
+          fillField('first_name', userData.personalInfo.firstName);
+          fillField('lastName', userData.personalInfo.lastName);
+          fillField('last name', userData.personalInfo.lastName);
+          fillField('last_name', userData.personalInfo.lastName);
+      }
 
     if (userData.personalInfo && userData.personalInfo.country) {
         fillField('country', userData.personalInfo.country);
+    }
+
+    // Fill LinkedIn profile
+    if (userData.personalInfo && userData.personalInfo.linkedinUrl) {
+        fillField('linkedin', userData.personalInfo.linkedinUrl);
+        fillField('linkedIn', userData.personalInfo.linkedinUrl);
+        fillField('linkedin profile', userData.personalInfo.linkedinUrl);
+        fillField('linkedIn profile', userData.personalInfo.linkedinUrl);
     }
 
     if (userData.personalInfo && userData.personalInfo.state && userData.personalInfo.city) {
@@ -92,6 +108,26 @@ function fillForm(userData) {
     Object.keys(userData.demographics || {}).forEach(key => {
         fillField(key, userData.demographics[key]);
     });
+
+    if (userData.personalInfo) {
+        const { address1, address2, city, state, zip } = userData.personalInfo;
+        const fullAddress = [address1, address2, city, state, zip].filter(Boolean).join(', ');
+        
+        // Try to fill a generic "Street Address" field
+        fillField('street address', address1);
+        
+        // If that doesn't work, try filling individual address fields
+        if (!document.querySelector('input[value="' + address1 + '"]')) {
+            fillField('address', fullAddress);
+            fillField('address1', address1);
+            fillField('address2', address2);
+        }
+        
+        // Fill city, state, and zip separately
+        fillField('city', city);
+        fillField('state', state);
+        fillField('zip', zip);
+    }
 
     // Handle special cases for demographics
     fillDemographicField('gender', userData.personalInfo.gender);
@@ -246,34 +282,38 @@ function fillField(name, values) {
     }
 }
 
+// ... existing code ...
+
 function findDemographicSelect(fieldName) {
     // First, try to find by specific EEO-related attributes
-    let select = document.querySelector(`select[name="eeo[${fieldName}]"]`);
-    if (select) return select;
+    let field = document.querySelector(`select[name="eeo[${fieldName}]"]`);
+    if (field) return field;
 
-    // If not found, look for a select element near a label with the field name
+    // Look for a select element or custom component near a label with the field name
     const labels = Array.from(document.querySelectorAll('label'));
     for (const label of labels) {
         if (label.textContent.toLowerCase().includes(fieldName.toLowerCase())) {
-            // Check if the label is associated with a select element
             const id = label.getAttribute('for');
             if (id) {
-                select = document.getElementById(id);
-                if (select && select.tagName === 'SELECT') return select;
+                field = document.getElementById(id);
+                if (field) return field;
             }
             
-            // If not, look for a nearby select element
-            select = label.closest('div').querySelector('select');
-            if (select) return select;
+            // Look for nearby select or custom component
+            const container = label.closest('div');
+            field = container.querySelector('select') || 
+                    container.querySelector('div[role="combobox"]') ||
+                    container.querySelector('input[type="text"][aria-autocomplete="list"]');
+            if (field) return field;
         }
     }
 
     // If still not found, try a more general approach
-    const allSelects = document.querySelectorAll('select');
-    for (const select of allSelects) {
-        const nearbyText = select.closest('div').textContent.toLowerCase();
+    const allFields = document.querySelectorAll('select, div[role="combobox"], input[type="text"][aria-autocomplete="list"]');
+    for (const field of allFields) {
+        const nearbyText = field.closest('div').textContent.toLowerCase();
         if (nearbyText.includes(fieldName.toLowerCase())) {
-            return select;
+            return field;
         }
     }
 
@@ -285,31 +325,11 @@ function setFieldValue(field, values) {
     console.log(`Values to set:`, values);
 
     if (field.tagName === 'SELECT') {
-        const options = Array.from(field.options);
-        console.log(`Select options:`, options.map(o => o.text));
-        let bestMatch = null;
-        let bestMatchScore = 0;
-
-        options.forEach(option => {
-            const optionText = option.text.toLowerCase();
-            values.forEach(value => {
-                const valueText = value.toLowerCase();
-                if (optionText.includes(valueText) || valueText.includes(optionText)) {
-                    const score = optionText.length - Math.abs(optionText.length - valueText.length);
-                    if (score > bestMatchScore) {
-                        bestMatch = option;
-                        bestMatchScore = score;
-                    }
-                }
-            });
-        });
-
-        if (bestMatch) {
-            field.value = bestMatch.value;
-            console.log(`Selected option '${bestMatch.text}' for field`);
-        } else {
-            console.log(`No matching option found for ${values.join(', ')} in select field`);
-        }
+        setSelectValue(field, values);
+    } else if (field.tagName === 'DIV' && field.getAttribute('role') === 'combobox') {
+        setCustomSelectValue(field, values);
+    } else if (field.tagName === 'INPUT' && field.getAttribute('aria-autocomplete') === 'list') {
+        setAutocompleteInputValue(field, values);
     } else if (field.type === 'checkbox') {
         field.checked = Boolean(values[0]);
         console.log(`Set checkbox to:`, field.checked);
@@ -322,3 +342,65 @@ function setFieldValue(field, values) {
     field.dispatchEvent(new Event('change', { bubbles: true }));
     field.dispatchEvent(new Event('input', { bubbles: true }));
 }
+
+function setSelectValue(select, values) {
+    const options = Array.from(select.options);
+    console.log(`Select options:`, options.map(o => o.text));
+    const bestMatch = findBestMatch(options, values, o => o.text);
+
+    if (bestMatch) {
+        select.value = bestMatch.value;
+        console.log(`Selected option '${bestMatch.text}' for select`);
+    } else {
+        console.log(`No matching option found for ${values.join(', ')} in select`);
+    }
+}
+
+function setCustomSelectValue(customSelect, values) {
+    const input = customSelect.querySelector('input');
+    const listboxId = customSelect.getAttribute('aria-controls');
+    const listbox = document.getElementById(listboxId);
+    const options = listbox ? Array.from(listbox.querySelectorAll('[role="option"]')) : [];
+    
+    console.log(`Custom select options:`, options.map(o => o.textContent));
+    const bestMatch = findBestMatch(options, values, o => o.textContent);
+
+    if (bestMatch && input) {
+        input.value = bestMatch.textContent.trim();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        bestMatch.click(); // This should select the option
+        console.log(`Selected option '${bestMatch.textContent}' for custom select`);
+    } else {
+        console.log(`No matching option found for ${values.join(', ')} in custom select`);
+    }
+}
+
+function setAutocompleteInputValue(input, values) {
+    input.value = values[0];
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    console.log(`Set autocomplete input value to:`, input.value);
+    // Note: This might need additional logic to handle the autocomplete dropdown
+}
+
+function findBestMatch(options, values, textExtractor) {
+    let bestMatch = null;
+    let bestMatchScore = 0;
+
+    options.forEach(option => {
+        const optionText = textExtractor(option).trim().toLowerCase();
+        values.forEach(value => {
+            const valueText = value.toLowerCase();
+            if (optionText.includes(valueText) || valueText.includes(optionText)) {
+                const score = optionText.length - Math.abs(optionText.length - valueText.length);
+                if (score > bestMatchScore) {
+                    bestMatch = option;
+                    bestMatchScore = score;
+                }
+            }
+        });
+    });
+
+    return bestMatch;
+}
+
+// ... rest of the existing code ...

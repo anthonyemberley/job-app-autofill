@@ -75,7 +75,7 @@ function populateFormFields(userData) {
     const personalInfoFields = [
         'firstName', 'lastName', 'preferredName', 'email', 'phoneType', 'countryPhoneCode',
         'phone', 'address1', 'address2', 'city', 'state', 'postalCode', 'country',
-        'gender', 'raceEthnicity', 'veteranStatus', 'disabilityStatus'
+        'gender', 'raceEthnicity', 'veteranStatus', 'disabilityStatus', 'linkedinUrl', 'githubUrl', 'otherWebsiteUrl'
     ];
 
     personalInfoFields.forEach(field => {
@@ -189,7 +189,7 @@ function saveUserData(event) {
         'firstName', 'lastName', 'preferredName', 'email', 'phoneType', 'countryPhoneCode',
         'phone', 'address1', 'address2', 'city', 'state', 'postalCode', 'country',
         'gender', 'raceEthnicity', 'veteranStatus', 'disabilityStatus',
-         'isPEP', 'relatedToPEP', 'relatedToPayPalEmployee'
+         'isPEP', 'relatedToPEP', 'relatedToPayPalEmployee', 'linkedinUrl', 'githubUrl', 'otherWebsiteUrl'
     ];
 
 

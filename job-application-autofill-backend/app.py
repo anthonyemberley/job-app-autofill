@@ -4,6 +4,8 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy.dialects.sqlite import JSON
 
+from flask_migrate import Migrate
+
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 import os
@@ -37,6 +39,7 @@ app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'fallback-secret
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=365)
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 app.logger.debug("This is a test log message")
 print("This is a print statement in the app.py file")
@@ -78,6 +81,10 @@ class User(db.Model):
     
     # Consent Settings
     auto_consent = db.Column(db.Boolean)
+    
+    linkedin_url = db.Column(db.String(255))
+    github_url = db.Column(db.String(255))
+    other_website_url = db.Column(db.String(255))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -91,8 +98,8 @@ class User(db.Model):
 #     db.create_all()
 
 # Create tables
-with app.app_context():
-    db.create_all()
+# with app.app_context():
+#     db.create_all()
     
 from flask import request
 
@@ -177,6 +184,12 @@ def update_user_data():
 
         # Update skills
         user.skills = user_data.get('skills', [])
+        
+        # Update URLs
+        user.linkedin_url = user.personal_info.get('linkedinUrl', '')
+        user.github_url = user.personal_info.get('githubUrl', '')
+        user.other_website_url = user.personal_info.get('otherWebsiteUrl', '')
+
 
         # Update work authorization
         user.authorized_to_work = user_data.get('authorizedToWork', False)
@@ -226,7 +239,10 @@ def get_user_data():
         'relatedToPEP': user.related_to_pep or False,
         'relatedToPayPalEmployee': user.related_to_paypal_employee or False,
         'howHeardAboutUs': user.how_heard_about_us or '',
-        'autoConsent': user.auto_consent or False
+        'autoConsent': user.auto_consent or False,
+        'linkedinUrl': user.linkedin_url or '',
+        'githubUrl': user.github_url or '',
+        'otherWebsiteUrl': user.other_website_url or '',
     }
     
     app.logger.debug(f"Returning user data: {user_data}")
